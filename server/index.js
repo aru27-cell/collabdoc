@@ -18,6 +18,11 @@ app.use(express.json());
 
 
 // Routes
+require('./models/User');
+require('./models/Document');
+require('./models/Version');
+
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/docs', require('./routes/documents'));
 
