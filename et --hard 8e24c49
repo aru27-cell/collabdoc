@@ -1,0 +1,5 @@
+[33m0f752fd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{0}: reset: moving to 0f752fd
+[33m8e24c49[m HEAD@{1}: commit: Day 2 — MongoDB schemas complete
+[33m50af9cb[m HEAD@{2}: commit: Clean repo: remove node_modules
+[33md0cec7e[m HEAD@{3}: commit: Remove node_modules and update gitignore
+[33m0f752fd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{4}: commit (initial): Day 1 -project setup complete

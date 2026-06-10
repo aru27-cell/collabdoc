@@ -1,39 +1,68 @@
+
 import { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import API from '../api/axios';
 
 export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleRegister = async () => {
+    setError('');
+    setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', { name, email, password });
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
+      const res = await API.post('/auth/register', { name, email, password });
+      login(res.data.user, res.data.token);
       navigate('/dashboard');
     } catch (err) {
-      alert(err.response?.data?.message || 'Register failed');
+      setError(err.response?.data?.message || 'Registration failed');
+    } finally {
+      setLoading(false);
     }
   };
 
-return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-semibold mb-6 text-center">Create Account</h1>
-        <input className="w-full border p-3 rounded-lg mb-3" placeholder="Full Name"
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-blue-600">CollabDoc</h1>
+          <p className="text-gray-500 text-sm mt-1">Create your account</p>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{error}</div>
+        )}
+<input
+          className="w-full border border-gray-200 p-3 rounded-xl mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Full name"
           value={name} onChange={e => setName(e.target.value)} />
-        <input className="w-full border p-3 rounded-lg mb-3" placeholder="Email"
+
+        <input
+          className="w-full border border-gray-200 p-3 rounded-xl mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Email address" type="email"
           value={email} onChange={e => setEmail(e.target.value)} />
-        <input className="w-full border p-3 rounded-lg mb-5" type="password" placeholder="Password"
+
+        <input
+          className="w-full border border-gray-200 p-3 rounded-xl mb-5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Password (min 6 chars)" type="password"
           value={password} onChange={e => setPassword(e.target.value)} />
-        <button onClick={handleRegister} className="w-full bg-blue-600 text-white p-3 rounded-lg font-medium hover:bg-blue-700">
-          Create Account
+        <button onClick={handleRegister} disabled={loading}
+          className="w-full bg-blue-600 text-white p-3 rounded-xl font-medium hover:bg-blue-700 disabled:opacity-60 transition">
+          {loading ? 'Creating account...' : 'Create Account'}
         </button>
-        <p className="text-center mt-4 text-sm text-gray-600">Have account? <Link to="/" className="text-blue-600">Login</Link></p>
+
+        <p className="text-center mt-5 text-sm text-gray-500">
+          Already have account? <Link to="/" className="text-blue-600 font-medium">Sign in</Link>
+        </p>
       </div>
     </div>
   );
 }
+
