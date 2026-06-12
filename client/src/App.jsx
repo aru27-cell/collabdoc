@@ -4,6 +4,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Editor from './pages/Editor';
+
+
 
 function App() {
   return (
@@ -18,7 +21,11 @@ function App() {
           <Route path="/dashboard" element={
             <ProtectedRoute><Dashboard /></ProtectedRoute>
           } />
-</Routes>
+
+          <Route path="/document/:id" element={<Editor />} />
+
+         </Routes> 
+  
       </BrowserRouter>
     </AuthProvider>
   );
