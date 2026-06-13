@@ -6,26 +6,25 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Editor from './pages/Editor';
 
-
-
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public — anyone can visit */}
+          {/* Public routes */}
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Protected — only logged in users */}
+          {/* Protected routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute><Dashboard /></ProtectedRoute>
           } />
 
-          <Route path="/document/:id" element={<Editor />} />
-
-         </Routes> 
-  
+          {/* Editor — :id is the document ID from MongoDB */}
+          <Route path="/document/:id" element={
+            <ProtectedRoute><Editor /></ProtectedRoute>
+          } />
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
