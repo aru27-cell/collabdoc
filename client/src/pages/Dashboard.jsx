@@ -14,44 +14,32 @@ export default function Dashboard() {
   const [renameValue, setRenameValue] = useState('');
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
   useEffect(() => { fetchDocs(); }, []);
 
-  // Safe fetch — handles both old and new API response shapes
   const fetchDocs = async () => {
     try {
-      const docsRes = await API.get('/docs');
-      const data = docsRes.data;
-
-      // Safe check — works whether API returns array or { owned, shared }
-      if (Array.isArray(data)) {
-        // Old format — just an array
-        setOwnedDocs(data);
-        setSharedDocs([]);
-      } else {
-        // New format — { owned: [], shared: [] }
-        setOwnedDocs(data.owned || []);
-        setSharedDocs(data.shared || []);
-      }
-    } catch (err) {
-      console.error('fetchDocs error:', err);
-    } finally {
-      setLoading(false);
-    }
+      const res = await API.get('/docs');
+      setOwnedDocs(Array.isArray(res.data) ? res.data : (res.data.owned || []));
+      setSharedDocs(Array.isArray(res.data) ? [] : (res.data.shared || []));
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   const createDoc = async () => {
     try {
-      const newDoc = await API.post('/docs', {});
-      navigate(`/document/${newDoc.data._id}`);
-    } catch (err) { console.error(err); }
+      const res = await API.post('/docs', {});
+      navigate(`/document/${res.data._id}`);
+    } catch (e) { console.error(e); }
   };
-const deleteDoc = async (id, e) => {
+
+  const deleteDoc = async (id, e) => {
     e.stopPropagation();
     if (!window.confirm('Delete this document?')) return;
     try {
       await API.delete(`/docs/${id}`);
-      setOwnedDocs(prev => prev.filter(d => d._id !== id));
-    } catch (err) { console.error(err); }
+      setOwnedDocs(p => p.filter(d => d._id !== id));
+    } catch (e) { console.error(e); }
   };
 
   const startRename = (doc, e) => {
@@ -59,46 +47,40 @@ const deleteDoc = async (id, e) => {
     setRenamingId(doc._id);
     setRenameValue(doc.title);
   };
+
   const submitRename = async (id) => {
     if (!renameValue.trim()) { setRenamingId(null); return; }
     try {
-      const renamed = await API.patch(`/docs/${id}/rename`, { title: renameValue });
-      setOwnedDocs(prev =>
-        prev.map(d => d._id === id ? { ...d, title: renamed.data.title } : d)
-      );
-    } catch (err) { console.error(err); }
+      const res = await API.patch(`/docs/${id}/rename`, { title: renameValue });
+      setOwnedDocs(p => p.map(d => d._id === id ? { ...d, title: res.data.title } : d));
+    } catch (e) { console.error(e); }
     finally { setRenamingId(null); }
   };
 
-  const handleLogout = () => { logout(); navigate('/'); };
-
-  // Filter docs by search
   const filtered = ownedDocs.filter(d =>
     d.title?.toLowerCase().includes(search.toLowerCase())
   );
-  // Skeleton loading card
+
   const Skeleton = () => (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 animate-pulse">
-      <div className="w-10 h-12 bg-gray-100 rounded-lg mb-4"></div>
-      <div className="h-4 bg-gray-100 rounded mb-2 w-3/4"></div>
-      <div className="h-3 bg-gray-50 rounded w-1/2"></div>
+    <div className="bg-white rounded-2xl p-5 border border-gray-100">
+      <div className="w-10 h-12 shimmer rounded-lg mb-4"></div>
+      <div className="h-4 shimmer rounded mb-2 w-3/4"></div>
+      <div className="h-3 shimmer rounded w-1/2"></div>
     </div>
   );
 
-  // Single doc card
   const DocCard = ({ doc, isOwned }) => (
     <div
       onClick={() => navigate(`/document/${doc._id}`)}
-      className="bg-white border border-gray-100 rounded-2xl p-5 cursor-pointer hover:shadow-md transition group relative"
+      className="doc-card bg-white border border-gray-100 rounded-2xl p-5 cursor-pointer group relative fade-in"
     >
-      <div className="w-10 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
-        <span className="text-blue-500 text-xl">📄</span>
+      <div className="w-10 h-14 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:from-blue-100 group-hover:to-blue-200 transition">
+        <span className="text-blue-500 text-2xl">📄</span>
       </div>
 
       {renamingId === doc._id ? (
-        <input
-          autoFocus
-          className="w-full border-b border-blue-400 text-sm font-medium outline-none pb-1 mb-1"
+        <input autoFocus
+          className="w-full border-b border-blue-400 text-sm font-medium outline-none pb-1 mb-1 bg-transparent"
           value={renameValue}
           onChange={e => setRenameValue(e.target.value)}
           onBlur={() => submitRename(doc._id)}
@@ -106,22 +88,28 @@ const deleteDoc = async (id, e) => {
           onClick={e => e.stopPropagation()}
         />
       ) : (
-        <p className="font-medium text-gray-800 truncate mb-1 text-sm">
+        <p className="font-medium text-gray-800 truncate text-sm mb-1">
           {doc.title || 'Untitled Document'}
         </p>
       )}
 
       <p className="text-xs text-gray-400">
-        {doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString() : ''}
+        {doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString('en-IN', {
+          day: 'numeric', month: 'short', year: 'numeric'
+        }) : ''}
       </p>
+
       {isOwned && (
         <div className="absolute top-3 right-3 gap-1 hidden group-hover:flex">
           <button onClick={e => startRename(doc, e)}
-            className="text-gray-300 hover:text-blue-500 text-sm px-1">✏️</button>
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-500 transition text-sm"
+            title="Rename">✏️</button>
           <button onClick={e => { e.stopPropagation(); setShareDocId(doc._id); }}
-            className="text-gray-300 hover:text-green-500 text-sm px-1">🔗</button>
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-green-50 text-gray-400 hover:text-green-500 transition text-sm"
+            title="Share">🔗</button>
           <button onClick={e => deleteDoc(doc._id, e)}
-            className="text-gray-300 hover:text-red-500 text-sm px-1">✕</button>
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition text-sm"
+            title="Delete">✕</button>
         </div>
       )}
     </div>
@@ -131,86 +119,88 @@ const deleteDoc = async (id, e) => {
     <div className="min-h-screen bg-gray-50">
 
       {/* Navbar */}
-      <div className="bg-white border-b border-gray-100 px-6 py-3 flex justify-between items-center">
+      <div className="bg-white border-b border-gray-100 px-6 py-3 flex justify-between items-center sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
             <span className="text-white text-sm font-bold">C</span>
           </div>
-          <span className="font-semibold text-gray-800 text-lg">CollabDoc</span>
+          <span className="font-semibold text-gray-800 text-lg tracking-tight">CollabDoc</span>
         </div>
         <div className="flex items-center gap-3">
           <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-sm cursor-default"
             style={{ backgroundColor: user?.color || '#3B82F6' }}
-          >
-            {user?.name?.[0]?.toUpperCase()}
+            title={user?.name}
+          >{user?.name?.[0]?.toUpperCase()}</div>
+          <div className="hidden sm:block">
+            <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+            <p className="text-xs text-gray-400">{user?.email}</p>
           </div>
-          <span className="text-sm text-gray-500 hidden sm:block">{user?.name}</span>
-          <button onClick={handleLogout}
-            className="text-sm text-red-400 hover:text-red-600 transition">Logout</button>
+          <button onClick={() => { logout(); navigate('/'); }}
+            className="text-sm text-red-400 hover:text-red-600 transition font-medium"
+          >Logout</button>
         </div>
       </div>
 
-      {/* Main */}
-      <div className="max-w-6xl mx-auto p-8">
+      {/* Hero bar */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-8 py-8">
+        <h2 className="text-white text-2xl font-semibold mb-1">
+          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.name?.split(' ')[0]}! 👋
+        </h2>
+        <p className="text-blue-100 text-sm">{ownedDocs.length} document{ownedDocs.length !== 1 ? 's' : ''} in your workspace</p>
+      </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-800">My Documents</h2>
-            <p className="text-sm text-gray-400 mt-1">{ownedDocs.length} document{ownedDocs.length !== 1 ? 's' : ''}</p>
-          </div>
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h3 className="text-lg font-semibold text-gray-800">My Documents</h3>
           <div className="flex gap-3 w-full sm:w-auto">
             <input
-                          className="border border-gray-200 px-4 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 sm:w-56"
+              className="border border-gray-200 px-4 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 sm:w-56 bg-white"
               placeholder="Search documents..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
             <button onClick={createDoc}
-              className="bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition">
-              + New
-            </button>
+              className="bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition shadow-sm whitespace-nowrap"
+            >+ New</button>
           </div>
         </div>
 
-{loading ? (
+        {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => <Skeleton key={i} />)}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-24">
-            <p className="text-6xl mb-4">📄</p>
+          <div className="text-center py-24 fade-in">
+            <div className="text-6xl mb-4">📄</div>
             <p className="text-gray-500 text-lg font-medium">
               {search ? 'No documents match your search' : 'No documents yet'}
             </p>
-            <p className="text-gray-400 text-sm mt-2">
-              {!search && 'Click + New to create your first document'}
-            </p>
+            {!search && (
+              <button onClick={createDoc}
+                className="mt-4 bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition"
+              >Create your first document</button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
-            {filtered.map(doc => (
-              <DocCard key={doc._id} doc={doc} isOwned={true} />
-            ))}
+            {filtered.map(doc => <DocCard key={doc._id} doc={doc} isOwned={true} />)}
           </div>
-)}
+        )}
 
         {sharedDocs.length > 0 && (
           <>
-            <h2 className="text-lg font-semibold text-gray-700 mb-4 mt-6">Shared with me</h2>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 mt-4">Shared with me</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {sharedDocs.map(doc => (
-                <DocCard key={doc._id} doc={doc} isOwned={false} />
-              ))}
+              {sharedDocs.map(doc => <DocCard key={doc._id} doc={doc} isOwned={false} />)}
             </div>
           </>
         )}
       </div>
 
-      {shareDocId && (
-        <ShareModal docId={shareDocId} onClose={() => setShareDocId(null)} />
-      )}
+      {shareDocId && <ShareModal docId={shareDocId} onClose={() => setShareDocId(null)} />}
     </div>
   );
 }
-

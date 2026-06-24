@@ -27,10 +27,11 @@ const res = await API.get('/auth/me');
   }, []);
 
   // Called after successful login or register
-  const login = (userData, token) => {
-    localStorage.setItem('token', token);
-    setUser(userData);
-  };
+const login = (userData, token) => {
+  localStorage.setItem('token', token);
+  localStorage.setItem('user', JSON.stringify(userData)); // ← ADD THIS LINE
+  setUser(userData);
+};
 
   // Called when user clicks logout
   const logout = () => {
