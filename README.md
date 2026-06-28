@@ -3,7 +3,7 @@
 A Google Docs clone built from scratch with React, Node.js, MongoDB, and Socket.io. Multiple users can edit the same document simultaneously and see each other's changes live.
 
 🔗 **Live Demo:** https://collabdoc-two.vercel.app
-🔗 **GitHub:** https://github.com/aru-27/collabdoc
+🔗 **GitHub:** https://github.com/aru27-cell/collabdoc
 
 ## ✨ Features
 
@@ -59,9 +59,6 @@ PORT=5000
 
 Building this project taught me how real-time collaborative systems work under the hood — specifically how to handle concurrent edits without conflicts using Socket.io rooms, how to design a permission system with role-based access control, and how to structure a fullstack app for both correctness and a smooth user experience.
 
-## 📸 Screenshots
-
-*(Add 3-4 screenshots here — dashboard, editor with two users typing, version history sidebar)*
 
 ## 📄 License
 
